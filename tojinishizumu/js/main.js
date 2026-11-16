@@ -2,12 +2,12 @@
   (function(){
     const ld=document.getElementById('loader'), html=document.documentElement;
     if(!ld || !html.classList.contains('is-loading')) return;
-    const MIN=1200, t0=performance.now();
+    const MIN=900, t0=performance.now();
     let done=false;
     const finish=()=>{ if(done) return; done=true;
       setTimeout(()=>{ ld.classList.add('is-done'); html.classList.remove('is-loading');
         try{sessionStorage.setItem('tnz_loaded','1')}catch(e){}
-        setTimeout(()=>ld.remove(),1000); }, Math.max(0, MIN-(performance.now()-t0)));
+        setTimeout(()=>ld.remove(),850); }, Math.max(0, MIN-(performance.now()-t0)));
     };
     if(document.readyState==='complete') finish(); else window.addEventListener('load',finish);
     setTimeout(finish,6000); // never block longer than this
@@ -47,16 +47,41 @@
     document.addEventListener('keydown',e=>{if(!lb.classList.contains('is-open'))return; if(e.key==='Escape')close(); if(e.key==='ArrowLeft')show(i-1); if(e.key==='ArrowRight')show(i+1);});
   }
 
-  // New page without #anchor: always start at the top.
-  // (html has scroll-behavior:smooth, so force an instant jump, and repeat after
-  //  images/fonts finish loading in case the browser restored an old position)
-  if('scrollRestoration' in history) history.scrollRestoration='manual';
-  const toTop=()=>{ if(location.hash) return;
-    const h=document.documentElement, b=h.style.scrollBehavior; h.style.scrollBehavior='auto';
-    window.scrollTo(0,0); h.scrollTop=0; document.body.scrollTop=0; h.style.scrollBehavior=b; };
-  toTop(); requestAnimationFrame(toTop);
-  window.addEventListener('load',toTop);
-  window.addEventListener('pageshow',toTop);
+  // ===== トップに戻ったときの位置 =====
+  // トップで過去開催のリンクを押した瞬間の位置(px)を覚えておき、
+  // 過去開催ページから戻ってきたときにその位置へ一瞬で戻す。それ以外は何もしない。
+  const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},
+            set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}},
+            del:k=>{try{sessionStorage.removeItem(k)}catch(e){}}};
+  if(document.querySelector('.hero')){                       // トップページ
+    if('scrollRestoration' in history) history.scrollRestoration='manual';
+    document.addEventListener('click',e=>{
+      const a=e.target.closest('a[href^="event-"]'); if(!a) return;
+      ss.set('tnz_return_y',String(Math.round(scrollY)));
+      const cards=[...document.querySelectorAll('#arcTrack .arc-card')];
+      if(cards.includes(a)) ss.set('tnz_return_slide',String(cards.indexOf(a)));   // カルーセルの何枚目を見ていたか
+    },true);
+    const navType=(performance.getEntriesByType('navigation')[0]||{}).type;
+    const y=ss.get('tnz_return_y');
+    if(y!==null && (navType==='back_forward' || ss.get('tnz_restore')==='1')){
+      const s=ss.get('tnz_return_slide'); if(s!==null) window.__tnzSlide=+s;
+      const go=()=>window.scrollTo(0,+y);
+      go(); window.addEventListener('load',go);
+    }
+    ss.del('tnz_restore');
+  }else{                                                      // 過去開催ページ
+    // 一番上から表示（普通のサイトでは元から一番上。前のページの位置を引き継ぐ環境向けに、一瞬で上へ合わせる）
+    if(!location.hash){ const top=()=>window.scrollTo(0,0); top(); requestAnimationFrame(top); }
+    document.querySelectorAll('.ev-back > a').forEach(a=>a.addEventListener('click',e=>{
+      if(ss.get('tnz_return_y')!==null){ e.preventDefault(); ss.set('tnz_restore','1'); location.href='index.html'; }
+    }));
+  }
+  // ページ内リンク（#concept など）だけ、なめらかにスクロール
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('a[href^="#"]'); if(!a) return;
+    const t=document.querySelector(a.getAttribute('href')); if(!t) return;
+    e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); history.pushState(null,'',a.getAttribute('href'));
+  });
 
   // Archive slider (PC). On phones the CSS stacks the cards and this does nothing visible.
   const track=document.getElementById('arcTrack');
@@ -85,7 +110,8 @@
     cards.forEach(c=>c.addEventListener('click',e=>{if(moved){e.preventDefault();moved=false;return;}
       // clicking a side card brings it to the center first
       const i=cards.indexOf(c); if(i!==cur){e.preventDefault();go(i);}}));
-    const init=()=>{track.style.scrollBehavior='auto';track.scrollLeft=center(cards[0]);track.style.scrollBehavior='';update();};
+    const startIdx=Math.min(cards.length-1,Math.max(0,window.__tnzSlide||0));   // 戻ってきたときは保存した1枚、普段は先頭
+    const init=()=>{track.style.scrollBehavior='auto';track.scrollLeft=center(cards[startIdx]);track.style.scrollBehavior='';update();};
     init();
     track.querySelectorAll('img').forEach(im=>{if(!im.complete)im.addEventListener('load',init,{once:true});});
     window.addEventListener('load',init);
