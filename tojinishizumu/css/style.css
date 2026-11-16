@@ -9,7 +9,7 @@
   --gothic:"Zen Kaku Gothic New",sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+
 section[id]{scroll-margin-top:120px}
 body{font-family:var(--mincho);color:var(--ink);background:#fff;line-height:1.9;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
@@ -55,12 +55,12 @@ img{display:block;max-width:100%}
 .hero .hero__title{z-index:1;align-items:flex-start;padding-top:clamp(56px,11vh,110px)}
 .hero__logo{width:clamp(200px,22vw,340px);height:auto}
 .cta .hero__logo{width:clamp(240px,30vw,440px)}
-.hero .hero__logo{opacity:0;will-change:filter,opacity,transform;animation:logoEmerge 3s cubic-bezier(.3,0,.25,1) .2s forwards}
+.hero .hero__logo{opacity:0;will-change:filter,opacity,transform;animation:logoEmerge 3s cubic-bezier(.3,0,.25,1) 0s forwards}
 /* じわっと浮き出る（強め）: 深い霧 → うっすら光をまといながら輪郭が出る → くっきり */
 @keyframes logoEmerge{
   0%  {opacity:0;filter:blur(26px) brightness(.4) drop-shadow(0 0 0 rgba(255,255,255,0));transform:translateY(10px) scale(1.05)}
-  25% {opacity:.35;filter:blur(16px) brightness(.6) drop-shadow(0 0 18px rgba(255,255,255,.35))}
-  55% {opacity:.75;filter:blur(7px) brightness(.85) drop-shadow(0 0 22px rgba(255,255,255,.45))}
+  15% {opacity:.35;filter:blur(16px) brightness(.6) drop-shadow(0 0 18px rgba(255,255,255,.35))}
+  48% {opacity:.75;filter:blur(7px) brightness(.85) drop-shadow(0 0 22px rgba(255,255,255,.45))}
   80% {opacity:.95;filter:blur(2px) brightness(1) drop-shadow(0 0 12px rgba(255,255,255,.25))}
   100%{opacity:1;filter:blur(0) brightness(1) drop-shadow(0 0 0 rgba(255,255,255,0));transform:none}
 }
